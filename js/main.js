@@ -3,12 +3,14 @@ enchant();
 
 const ASSETS = {
 	// スタート画像を追加
-	start : './img/start.png',
+	title_font : './img/title_font.png',
 	// ゲームオーバー画像を追加
 	end : './img/end.png',
 	// キャルイメージ
 	kyaru_title : './img/kyaru_all.png',
-	
+	// スタートボタン
+	start_button : './img/start_button.png',
+
 	// 選択音
 	se_ok : './sound/se/se_ok.mp3',
 	// メインメニュbgm
@@ -34,9 +36,9 @@ const start_s = {
 
 const title = {
 	x:40,
-	y:40,
+	y:20,
 	w:236,
-	h:48
+	h:96
 }
 
 const title_kyaru = {
@@ -44,15 +46,31 @@ const title_kyaru = {
 	h: 198
 }
 
+const start_button = {
+	w:100,
+	h:80
+}
+
 var Title = enchant.Class.create(enchant.Sprite,{
 	initialize: function() {
 		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
 		enchant.Sprite.call(this, title.w, title.h);
 
-		this.image = game.assets['start']
+		this.image = game.assets['title_font']
 		this.x = title.x;
 		this.y = title.y;
 	}
+});
+
+var StartButton = enchant.Class.create(enchant.Sprite, {
+	initialize: function() {
+		enchant.Sprite.call(this, start_button.w, start_button.h);
+
+		this.image = game.assets['start_button']
+		this.x = start_button.w/10;
+		this.y = canvas.height - start_button.h*2 + start_button.h/2;
+	}
+
 });
 
 var Title_Kya = enchant.Class.create(enchant.Sprite, {
@@ -115,6 +133,8 @@ var MainMenuScene = enchant.Class.create(enchant.Scene, {
 
 		var title = new Title()
 		var title_kya = new Title_Kya()
+		var start_button = new StartButton()
+
 		var frame_num = 0;
 
 		this.addEventListener(Event.ENTER_FRAME, function(){
@@ -122,6 +142,7 @@ var MainMenuScene = enchant.Class.create(enchant.Scene, {
 			mainmenu_bgm.loop()
 
 			this.addChild(title)
+			this.addChild(start_button)
 
 			if(this.age%10 == 0) {
 				frame_num = this.age/10
