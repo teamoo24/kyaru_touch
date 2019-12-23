@@ -6,6 +6,9 @@ const ASSETS = {
 	start : './img/start.png',
 	// ゲームオーバー画像を追加
 	end : './img/end.png',
+	// キャルイメージ
+	kyaru_title : './img/kyaru_all.png',
+	
 	// 選択音
 	se_ok : './sound/se/se_ok.mp3',
 	// メインメニュbgm
@@ -36,6 +39,11 @@ const title = {
 	h:48
 }
 
+const title_kyaru = {
+	w: 287,
+	h: 198
+}
+
 var Title = enchant.Class.create(enchant.Sprite,{
 	initialize: function() {
 		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
@@ -47,7 +55,22 @@ var Title = enchant.Class.create(enchant.Sprite,{
 	}
 });
 
+var Title_Kya = enchant.Class.create(enchant.Sprite, {
+	initialize: function() {
+		enchant.Sprite.call(this, title_kyaru.w, title_kyaru.h);
+
+		this.image = game.assets['kyaru_title']
+		this.x = canvas.width - title_kyaru.w+43;
+		this.y = canvas.height - title_kyaru.h;
+		this.frame = 0;
+	},
+	chage_frame: function(number) {
+		this.frame = number;
+	}
+});
+
 var se_ok, mainmenu_bgm;
+
 window.onload = function() {
 	game = new Core(canvas.width, canvas.height)
 	game.fps = 30;
@@ -87,16 +110,25 @@ var MainMenuScene = enchant.Class.create(enchant.Scene, {
 		// 画面初期処理
 		game.replaceScene(this);
 
-		this.backgroundColor = "#4abafa"
+		this.backgroundColor = "#fff"
 		mainmenu_bgm.set(game.assets['bgm_mainmenu']);
 
 		var title = new Title()
+		var title_kya = new Title_Kya()
+		var frame_num = 0;
 
 		this.addEventListener(Event.ENTER_FRAME, function(){
 
 			mainmenu_bgm.loop()
 
 			this.addChild(title)
+
+			if(this.age%10 == 0) {
+				frame_num = this.age/10
+			}
+
+			title_kya.chage_frame(frame_num%5)
+			this.addChild(title_kya)
 
 			if(!mainmenu_bgm.isPlay) {
 				mainmenu_bgm.play();
@@ -134,7 +166,7 @@ var TitleScene = enchant.Class.create(enchant.Scene, {
 		});
 
 		// フェードアウト用のオブジェクト
-		var fade_out = new FadeOut(canvas.width, canvas.height, "#4abafa")
+		var fade_out = new FadeOut(canvas.width, canvas.height, "#fff")
 
 		// タイトル画面シーンのループ
 		this.addEventListener(Event.ENTER_FRAME, function(){
