@@ -5,7 +5,11 @@ const ASSETS = {
 	// スタート画像を追加
 	start : './img/start.png',
 	// ゲームオーバー画像を追加
-	end : './img/end.png'
+	end : './img/end.png',
+	// 選択音
+	se_ok : './sound/se/se_ok.mp3',
+	// メインメニュbgm
+	bgm_mainmenu : './sound/bgm/bgm_mainmenu.mp3'
 }
 
 const canvas = {
@@ -13,39 +17,142 @@ const canvas = {
 	height : 320
 }
 
+const SCENE = {
+	title:1,
+	main_menu:2,
+	main_game:3
+}
+
 const start_s = {
 	x:40,
 	y:160,
-	w:320
+	w:320,
 }
 
-// var Start_Button = enchant.Class.create(enchant.Sprite,{
-// 	initialize: function(x,y,w,h) {
-// 		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
-// 		enchant.Sprite.call(this, w,h);
+const title = {
+	x:40,
+	y:40,
+	w:236,
+	h:48
+}
 
-// 		this.image = game.assets[start]
-// 		this.x = start_s.x;
-// 		this.y = start_s.y;
+var Title = enchant.Class.create(enchant.Sprite,{
+	initialize: function() {
+		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
+		enchant.Sprite.call(this, title.w, title.h);
 
-// 		this.addEventListener(Event.TOUCH_END, function(e) {
-// 			game.rootScene.removeChild(this)
-// 		});
-// 	}
-// });
+		this.image = game.assets['start']
+		this.x = title.x;
+		this.y = title.y;
+	}
+});
 
+var se_ok, mainmenu_bgm;
 window.onload = function() {
-	game = new Core(canvas.width, canvas.heigt)
+	game = new Core(canvas.width, canvas.height)
 	game.fps = 30;
-	game.rootScene.backgroundColor = "#4abafa";
 	game.preload(ASSETS);
 	game.onload = function(){
-		var start_button = new MutableText(start_s.x, start_s.y, start_s.w);
-		start_button.setText("Touch to start")
-		start_button.addEventListener(Event.TOUCH_END,function(e){
-			game.rootScene.removeChild(start_button)
-		});
-		game.rootScene.addChild(start_button);
+		se_ok = new SoundEffect();
+		se_ok.set(game.assets['se_ok'],1)
+
+		mainmenu_bgm = new Bgm()
+
+		system = new System();
+		system.changeScene(SCENE.title)
 	}
 	game.start();
 }
+
+var System = enchant.Class.create({
+	initialize: function() {
+		this.rootScene;
+	},
+	// シーン切り替え
+	changeScene: function(sceneNumber) {
+		switch (sceneNumber) {
+			case SCENE.title:
+				var title = new TitleScene();
+				// statements_1
+				break;
+			case SCENE.main_menu:
+				var main = new MainMenuScene();
+		}
+	}
+});
+
+var MainMenuScene = enchant.Class.create(enchant.Scene, {
+	initialize: function(){
+		enchant.Scene.call(this);
+		// 画面初期処理
+		game.replaceScene(this);
+
+		this.backgroundColor = "#4abafa"
+		mainmenu_bgm.set(game.assets['bgm_mainmenu']);
+
+		var title = new Title()
+
+		this.addEventListener(Event.ENTER_FRAME, function(){
+
+			mainmenu_bgm.loop()
+
+			this.addChild(title)
+
+			if(!mainmenu_bgm.isPlay) {
+				mainmenu_bgm.play();
+			}
+		});
+	}
+});
+
+var TitleScene = enchant.Class.create(enchant.Scene, {
+	initialize: function(){
+		enchant.Scene.call(this);
+		// 画面初期処理
+		game.replaceScene(this);
+
+		this.backgroundColor = "black";//背景色
+		
+		var screen = new Group();//ゲーム用スクリーン作成
+        this.addChild(screen);
+        var start_button = new MutableText(canvas.width/6, canvas.height/2, start_s.w);
+		
+		start_button.setText("Touch to start")
+
+		screen.addChild(start_button);
+	
+		// スタートボタンの押下チェック
+		var isStartPushed = false;	
+		this.addEventListener(Event.TOUCH_END,function(e){
+			if(!isStartPushed) {
+				isStartPushed = !isStartPushed;
+			}
+			se_ok.play();//効果音
+
+			// this.age:スプライトを書きだして何フレーム動いたか
+			this.from = this.age;
+		});
+
+		// フェードアウト用のオブジェクト
+		var fade_out = new FadeOut(canvas.width, canvas.height, "#4abafa")
+
+		// タイトル画面シーンのループ
+		this.addEventListener(Event.ENTER_FRAME, function(){
+			if(isStartPushed) {
+				if(start_button.visible) {
+					start_button.visible = !start_button.visible
+				} else {
+					start_button.visible = !start_button.visible
+				}
+				if(this.age - this.from > 20){//20フレーム後にフェードアウト
+					fade_out.start(screen);
+				}
+			}
+
+			if(fade_out.do(0.1)){//trueが帰ってきたらフェードアウト後の処理へ
+				removeChildren(this);//子要素を削除
+				system.changeScene(SCENE.main_menu);
+			}
+		});
+	}
+});
