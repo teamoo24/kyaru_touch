@@ -19,11 +19,19 @@ const ASSETS = {
 
 	// 選択音
 	se_ok : './sound/se/se_ok.mp3',
+	// キャルクリック
+	se_true : './sound/se/se_true.mp3',
+	// 他のキャラクリック
+	se_false : './sound/se/se_false.mp3',
 
 	// メインメニュbgm
 	bgm_mainmenu : './sound/bgm/bgm_mainmenu.mp3',
 	// メインゲームbgm
 	bgm_maingame : './sound/bgm/bgm_maingame.mp3'
+}
+const end_s = {
+	x : 0,
+	y : 0
 }
 const canvas = {
 	width : 320,
@@ -54,18 +62,24 @@ const start_button = {
 	h:80
 }
 const tomato_s = {
-	w:32,
-	h:32
-}
-const emotion_s = {
-	w:32,
-	h:32
+	w:96,
+	h:96
 }
 
-var se_ok, mainmenu_bgm, maingame_bgm;
+var se_ok, mainmenu_bgm, maingame_bgm, se_true, se_false;
 
 SPEED = 2;
 
+var End = enchant.Class.create(enchant.Sprite, {
+	initialize : function() {
+		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
+		enchant.Sprite.call(this, 189, 97);
+
+		this.image = game.assets['end']
+		this.x = canvas.width/5;
+		this.y = canvas.height/3;
+	}
+});
 var Title = enchant.Class.create(enchant.Sprite,{
 	initialize: function() {
 		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
@@ -103,9 +117,9 @@ var Title_Kya = enchant.Class.create(enchant.Sprite, {
 
 var Tomato = enchant.Class.create(enchant.Sprite, {
 	// 「initialize」メソッド(コンストラクタ)
-	initialize: function(x,y,scene) {
+	initialize: function(x,y,is_over,scene) {
 		// 継承元をコール
-		enchant.Sprite.call(this, 32, 32);
+		enchant.Sprite.call(this, tomato_s.w, tomato_s.h);
 		// スプライトの画像に「tomato.png」を設定する
 		this.image = game.assets['tomato']
 		this.x = x; //x座標
@@ -126,32 +140,29 @@ var Tomato = enchant.Class.create(enchant.Sprite, {
 
 		// 「touchstart」イベントリスナ
 		this.addEventListener(Event.TOUCH_END, function(){
-			// 赤いトマト（フレーム番号が「2」）にタッチ
-			if (this.frame == 2) {
-				game.score += 10; // スコア + 10点
-				// ウィンクのエモーションを作成する
-				var emotion = new Emotion(this.x, this.y, scene);
-				emotion.frame = 1;
-			}
+			// ゲームオーバーではないとき
+			if(!is_over) {
+				// 赤いトマト（フレーム番号が「2」）にタッチ
+				if (this.frame == 2) {
+					game.score += 1; // スコア + 10点	
+					se_true.play()
+				}
 
-			// 黄色いトマト(フレーム番号が「1」)にタッチ
-			if (this.frame == 1) {
-				game.score -= 1; // スコア - 1点
-				// 怒りのエモーションを作成する
-				var emotion = new Emotion(this.x, this.y, scene);
-				emotion.frame = 3;
-			}
+				// 黄色いトマト(フレーム番号が「1」)にタッチ
+				if (this.frame == 1) {
+					game.score -= 1; // スコア - 1点
+					se_false.play()
+				}
 
-			// 緑色いトマト(フレーム番号が「0」)にタッチ
-			if (this.frame == 0) {
-				game.score -= 1; // スコア - 1点
-				// 泣き顔のエモーションを作成する
-				var emotion = new Emotion(this.x, this.y, scene);
-				emotion.frame = 4;
-			}
+				// 緑色いトマト(フレーム番号が「0」)にタッチ
+				if (this.frame == 0) {
+					game.score -= 1; // スコア - 1点
+					se_false.play()
+				}
 
-			// 「remove」メソッドを実行し、シーンから削除
-			this.remove(scene);
+				// 「remove」メソッドを実行し、シーンから削除
+				this.remove(scene);
+			}
 		});
 		scene.addChild(this)
 	},
@@ -159,36 +170,6 @@ var Tomato = enchant.Class.create(enchant.Sprite, {
 		// このスプライトをシーンから削除
 		scene.removeChild(this)
 		// このスプライトを削除
-		delete this;
-	}
-});
-
-// エモーションのスプライトを作成するクラス
-var Emotion = enchant.Class.create(enchant.Sprite, {
-	// 「initailize」メソッド(コンタクトラクタ)
-	initialize: function(x,y,scene) {
-		// 継承元をコール
-		enchant.Sprite.call(this, emotion_s.w, emotion_s.h);
-		// スプライトの画像に「emotion.png」を設定する
-		this.image = game.assets['emotion'];
-		this.x = x; //x座標
-		this.y = y; //y座標
-
-		var dy = 4;
-		// 「enterframe」イベントリスナ
-		this.addEventListener(Event.ENTER_FRAME, function() {
-			// このスプライトの移動処理
-			this.frame <=2 ? this.y -= dy : this.y += dy;
-			// このスプライトが画面の上下端まで移動したら、「remove」メソッドを実行して削除する
-			if(this.y < -emotion_s.h || this.y>canvas.height) this.remove(scene)
-		});
-		scene.addChild(this)
-	},
-	// 「remove」メソッド
-	remove: function(scene) {
-		// このスプライトをシーンから削除
-		scene.removeChild(this);
-		// このスプライトを削除する
 		delete this;
 	}
 });
@@ -234,6 +215,16 @@ var System = enchant.Class.create({
 	}
 });
 
+var ResultScene = enchant.Class.create(enchant.Scene, {
+	initialize: function(){
+		enchant.Scene.call(this);
+		// 画面初期処理
+		game.replaceScene(this);
+
+		this.backgroundColor = "#fff"
+	}
+})
+
 var MainGameScene = enchant.Class.create(enchant.Scene,{
 	initialize: function(){
 		enchant.Scene.call(this);
@@ -242,6 +233,12 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 
 		var screen = new Group();//ゲーム用スクリーン作成
         this.addChild(screen);
+
+		se_true = new SoundEffect();
+		se_true.set(game.assets['se_true'],9)
+
+		se_false = new SoundEffect();
+		se_false.set(game.assets['se_false'],9)
 
 		maingame_bgm.set(game.assets['bgm_maingame']);
 
@@ -264,6 +261,8 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 		screen.addChild(timeLabel)
 
 		var is_bgm_play = true;
+		var is_over = false;
+		var end = new End();
 
 		this.addEventListener(Event.ENTER_FRAME, function(){
 
@@ -280,7 +279,7 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 				// 制限時間を１秒ずつカウントダウンする
 				if (game.timelimit <= 0) {
 					// 制限時間が「0」ならタイムアップの画像を表示して終了
-
+					is_over = true;
 				} else {
 					game.timelimit --;
 				}
@@ -290,7 +289,12 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 			// ランダム(「10」か「20」か「30」フレーム毎に)にトマトのスプライトを作成する
 			if (game.frame % ((rand(3)+1)*10) == 0) {
 				// 表示位置のxy座標は0~320(32ピクセル刻み)の範囲でランダム
-				var tomato = new Tomato(rand(canvas.width/tomato_s.w)*tomato_s.w,rand(canvas.height/tomato_s.h)*tomato_s.h,screen)
+				var tomato = new Tomato(rand((canvas.width/tomato_s.w)-1)*tomato_s.w + 16,rand((canvas.height/tomato_s.h)-1)*tomato_s.h + 16,is_over,screen)
+			}
+
+			if(is_over) {
+				screen.addChild(end)
+				this.from = this.age;
 			}
 
 		});
