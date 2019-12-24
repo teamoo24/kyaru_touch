@@ -118,7 +118,7 @@ var Tomato = enchant.Class.create(enchant.Sprite, {
 				// 経過秒数をカウントする
 				this.tick++;
 				// 2秒経過したなら、「remove」メソッドを実行する
-				if (this.tick>SPEED) this.remove()
+				if (this.tick>SPEED) this.remove(scene)
 			}
 		});
 
@@ -149,13 +149,13 @@ var Tomato = enchant.Class.create(enchant.Sprite, {
 			}
 
 			// 「remove」メソッドを実行し、シーンから削除
-			this.remove();
+			this.remove(scene);
 		});
 		scene.addChild(this)
 	},
-	remove: function() {
+	remove: function(scene) {
 		// このスプライトをシーンから削除
-		removeChildren(this)
+		scene.removeChild(this)
 		// このスプライトを削除
 		delete this;
 	}
@@ -234,6 +234,9 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 		// 画面初期処理
 		game.replaceScene(this);
 
+		var screen = new Group();//ゲーム用スクリーン作成
+        this.addChild(screen);
+
 		maingame_bgm.set(game.assets['bgm_maingame']);
 
 		this.backgroundColor = "#fff"
@@ -244,15 +247,15 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 		scoreLabel.score = 0;
 		// イージング表示なしに設定する
 		scoreLabel.easing = 0;
-		this.addChild(scoreLabel);
+		screen.addChild(scoreLabel);
 
 		// 制限時間(残り時間)のフォントで表示するラベルを作成する
 		// 引数はラベル表示位置のxy座標
 		var timeLabel = new MutableText(10,0)
 
 		// 表示する文字列の初期設定
-		timeLabel.text = 'TIME:' + game.limitTime;
-		this.addChild(timeLabel)
+		timeLabel.text ='TIME:' + game.timelimit;
+		screen.addChild(timeLabel)
 
 		var is_bgm_play = true;
 
@@ -267,24 +270,22 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 			// スコアを更新数
 			scoreLabel.score = game.score;
 
-			console.log(game.frame)
-
 			if (game.frame % game.fps == 0) {
 				// 制限時間を１秒ずつカウントダウンする
-				game.limitTime --;
-				timeLabel.text = 'TIME : ' + game.limitTime;
-				if (game.limitTime == 0) {
+				if (game.timelimit <= 0) {
 					// 制限時間が「0」ならタイムアップの画像を表示して終了
-					game.end(null,null,core.assets['timeup']);
+
+				} else {
+					game.timelimit --;
 				}
-				var tomato = new Tomato(rand(10)*32,rand(10)*32,this)
+				timeLabel.text ='TIME:' + game.timelimit;
 			}
 
 			// ランダム(「10」か「20」か「30」フレーム毎に)にトマトのスプライトを作成する
-			// if (game.frame % (rand(3)+1)*10 == 0) {
+			if (game.frame % ((rand(3)+1)*10) == 0) {
 				// 表示位置のxy座標は0~320(32ピクセル刻み)の範囲でランダム
-				
-			// }
+				var tomato = new Tomato(rand(10)*32,rand(10)*32,screen)
+			}
 
 		});
 	}
