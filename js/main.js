@@ -16,6 +16,8 @@ const ASSETS = {
 	emotion : './img/emotion.png',
 	// タイムアップ画像を追加
 	timeup : './img/timeup.png',
+	// ランク表示用の画像を追加
+	rank : './img/rank.png',
 
 	// 選択音
 	se_ok : './sound/se/se_ok.mp3',
@@ -27,7 +29,9 @@ const ASSETS = {
 	// メインメニュbgm
 	bgm_mainmenu : './sound/bgm/bgm_mainmenu.mp3',
 	// メインゲームbgm
-	bgm_maingame : './sound/bgm/bgm_maingame.mp3'
+	bgm_maingame : './sound/bgm/bgm_maingame.mp3',
+	// 結果画面bgm
+	bgm_result : './sound/bgm/bgm_result.mp3'
 }
 const canvas = {
 	width : 320,
@@ -62,8 +66,12 @@ const tomato_s = {
 	w:96,
 	h:96
 }
+const rank_s = {
+	w:60,
+	h:60
+}
 
-var se_ok, mainmenu_bgm, maingame_bgm, se_true, se_false;
+var se_ok, mainmenu_bgm, maingame_bgm, result_bgm, se_true, se_false;
 
 SPEED = 2;
 
@@ -96,6 +104,30 @@ var StartButton = enchant.Class.create(enchant.Sprite, {
 		this.image = game.assets['start_button']
 		this.x = start_button.w/10;
 		this.y = canvas.height - start_button.h*2 + start_button.h/2;
+	}
+});
+
+var Rank = enchant.Class.create(enchant.Sprite, {
+	initialize:function(x,y,score) {
+		enchant.Sprite.call(this, rank_s.w, rank_s.h);
+		this.image = game.assets['rank']
+		this.x = x;
+		this.y = y;
+
+		var rank_per = 8;
+		if(score<rank_per) {
+			this.frame = 0;
+		} else if(score<rank_per*2) {
+			this.frame = 1;
+		} else if(score<rank_per*3) {
+			this.frame = 2;
+		} else if(score<rank_per*4) {
+			this.frame = 3;
+		} else if(score<rank_per*5) {
+			this.frame = 4;
+		} else {
+			this.frame = 5;
+		}
 	}
 });
 
@@ -186,6 +218,7 @@ window.onload = function() {
 
 		mainmenu_bgm = new Bgm()
 		maingame_bgm = new Bgm()
+		result_bgm = new Bgm()
 
 		system = new System();
 		system.changeScene(SCENE.title)
@@ -223,9 +256,53 @@ var ResultScene = enchant.Class.create(enchant.Scene, {
 		// 画面初期処理
 		game.replaceScene(this);
 
+		var screen = new Group();//ゲーム用スクリーン作成
+        this.addChild(screen);
+
 		this.backgroundColor = "#000"
 
-		console.log('asgasgas')
+		result_bgm.set(game.assets['bgm_result']);
+
+		var score_label = new MutableText(canvas.width/4,canvas.height/9)
+		score_label.text = 'Your score'; 
+
+		var score_value = new MutableText(canvas.width/4,canvas.height/9 * 2)
+		score_value.text = String(game.score);
+
+		var highscore_label = new MutableText(canvas.width/4,canvas.height/9 * 3)
+		highscore_label.text = 'High sore'; 
+
+		var highscore_value = new MutableText(canvas.width/4,canvas.height/9 * 4)
+		highscore_value.text = String(game.high_score);
+
+		var rank_label = new MutableText(canvas.width/4,canvas.height/9 * 5)
+		rank_label.text = 'Your rank'
+
+		var rank = new Rank(canvas.width/3,canvas.height/9 * 6, game.score)
+
+		var is_touched = false;
+		this.addEventListener(Event.ENTER_FRAME, function(){
+			result_bgm.loop();
+			if(!result_bgm.isPlay && !is_touched) {
+				result_bgm.play();
+			}
+
+			screen.addChild(score_label);
+			screen.addChild(score_value);
+			screen.addChild(highscore_label);
+			screen.addChild(highscore_value);
+			screen.addChild(rank_label);
+			screen.addChild(rank);
+
+			
+		});
+		this.addEventListener(Event.TOUCH_END,function(){
+			console.log('touched')
+			is_touched = true;
+			result_bgm.stop();
+			system.changeScene(SCENE.main_menu);
+		})
+
 	}
 })
 
@@ -309,7 +386,6 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 				if(this.age - this.from > 150) {
 					maingame_bgm.stop()
 					system.changeScene(SCENE.result);
-					// console.log('asgasgasg')	
 				}
 			}
 		});
