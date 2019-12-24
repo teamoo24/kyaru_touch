@@ -281,7 +281,7 @@ var ResultScene = enchant.Class.create(enchant.Scene, {
 		var rank_label = new MutableText(canvas.width/4,canvas.height/9 * 5)
 		rank_label.text = 'Your rank'
 
-		var rank = new Rank(canvas.width/3,canvas.height/9 * 6, game.score)
+		var rank = new Rank(canvas.width/4,canvas.height/9 * 6, game.score)
 
 		var touch_to_back = new MutableText(canvas.width/6,canvas.height/9 * 8)
 		touch_to_back.text = 'touch to back'
