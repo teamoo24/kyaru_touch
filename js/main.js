@@ -73,7 +73,10 @@ const rank_s = {
 
 var se_ok, mainmenu_bgm, maingame_bgm, result_bgm, se_true, se_false;
 
+// ゲームのブロックの生成時間調整
 SPEED = 2;
+// ゲームのプレイ時間設定
+INIT_TIMELIMIT=5;
 
 var End = enchant.Class.create(enchant.Sprite, {
 	initialize : function() {
@@ -208,7 +211,7 @@ window.onload = function() {
 	game = new Core(canvas.width, canvas.height)
 	game.fps = 30;
 	game.score = 0;
-	game.timelimit = 5;
+	game.timelimit = INIT_TIMELIMIT;
 	game.high_score = parseInt(localStorage.getItem("best_hatsune")) || game.score;
 
 	game.preload(ASSETS);
@@ -280,27 +283,44 @@ var ResultScene = enchant.Class.create(enchant.Scene, {
 
 		var rank = new Rank(canvas.width/3,canvas.height/9 * 6, game.score)
 
+		var touch_to_back = new MutableText(canvas.width/6,canvas.height/9 * 8)
+		touch_to_back.text = 'touch to back'
+
 		var is_touched = false;
+		var is_can_back = false;
+
+		var ani_tum = 20;
 		this.addEventListener(Event.ENTER_FRAME, function(){
 			result_bgm.loop();
 			if(!result_bgm.isPlay && !is_touched) {
 				result_bgm.play();
 			}
-
-			screen.addChild(score_label);
-			screen.addChild(score_value);
-			screen.addChild(highscore_label);
-			screen.addChild(highscore_value);
-			screen.addChild(rank_label);
-			screen.addChild(rank);
+			console.log('age :' + this.age)
+			if (this.age == ani_tum) {
+				screen.addChild(score_label);
+			} else if (this.age == ani_tum*2) {
+				screen.addChild(score_value);
+			} else if (this.age == ani_tum*3) {
+				screen.addChild(highscore_label);
+			} else if (this.age == ani_tum*4) {
+				screen.addChild(highscore_value);
+			} else if (this.age == ani_tum*5) {
+				screen.addChild(rank_label);
+			} else if (this.age == ani_tum*6) {
+				screen.addChild(rank);
+			} else if (this.age > ani_tum*7) {
+				screen.addChild(touch_to_back)
+				is_can_back = true;
+			} 
 
 			
 		});
 		this.addEventListener(Event.TOUCH_END,function(){
-			console.log('touched')
 			is_touched = true;
-			result_bgm.stop();
-			system.changeScene(SCENE.main_menu);
+			if(is_can_back) {
+				result_bgm.stop();
+				system.changeScene(SCENE.main_menu);				
+			}
 		})
 
 	}
@@ -324,6 +344,8 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 		maingame_bgm.set(game.assets['bgm_maingame']);
 
 		this.backgroundColor = "#fff"
+
+		game.timelimit = INIT_TIMELIMIT;
 
 		// 引数はラベル表示位置のxy座標
 		var scoreLabel = new ScoreLabel(160,0);
