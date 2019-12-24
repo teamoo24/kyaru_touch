@@ -25,39 +25,41 @@ const ASSETS = {
 	// メインゲームbgm
 	bgm_maingame : './sound/bgm/bgm_maingame.mp3'
 }
-
 const canvas = {
 	width : 320,
 	height : 320
 }
-
 const SCENE = {
 	title:1,
 	main_menu:2,
 	main_game:3,
 }
-
 const start_s = {
 	x:40,
 	y:160,
 	w:320,
 }
-
 const title = {
 	x:40,
-	y:20,
+	y:40,
 	w:236,
 	h:96
 }
-
 const title_kyaru = {
 	w: 287,
 	h: 198
 }
-
 const start_button = {
 	w:100,
 	h:80
+}
+const tomato_s = {
+	w:32,
+	h:32
+}
+const emotion_s = {
+	w:32,
+	h:32
 }
 
 var se_ok, mainmenu_bgm, maingame_bgm;
@@ -166,24 +168,26 @@ var Emotion = enchant.Class.create(enchant.Sprite, {
 	// 「initailize」メソッド(コンタクトラクタ)
 	initialize: function(x,y,scene) {
 		// 継承元をコール
-		enchant.Sprite.call(this, 32, 32);
+		enchant.Sprite.call(this, emotion_s.w, emotion_s.h);
 		// スプライトの画像に「emotion.png」を設定する
 		this.image = game.assets['emotion'];
 		this.x = x; //x座標
 		this.y = y; //y座標
+
+		var dy = 4;
 		// 「enterframe」イベントリスナ
 		this.addEventListener(Event.ENTER_FRAME, function() {
 			// このスプライトの移動処理
-			this.frame <=2 ? this.y -=4 : this.y +=4;
+			this.frame <=2 ? this.y -= dy : this.y += dy;
 			// このスプライトが画面の上下端まで移動したら、「remove」メソッドを実行して削除する
-			if(this.y || this.y>320) this.remove()
+			if(this.y < -emotion_s.h || this.y>canvas.height) this.remove(scene)
 		});
 		scene.addChild(this)
 	},
 	// 「remove」メソッド
-	remove: function() {
+	remove: function(scene) {
 		// このスプライトをシーンから削除
-		removeChildren(this);
+		scene.removeChild(this);
 		// このスプライトを削除する
 		delete this;
 	}
@@ -194,6 +198,8 @@ window.onload = function() {
 	game.fps = 30;
 	game.score = 0;
 	game.timelimit = 30;
+	game.high_score = parseInt(localStorage.getItem("best_hatsune")) || game.score;
+
 	game.preload(ASSETS);
 	game.onload = function(){
 		se_ok = new SoundEffect();
@@ -284,7 +290,7 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 			// ランダム(「10」か「20」か「30」フレーム毎に)にトマトのスプライトを作成する
 			if (game.frame % ((rand(3)+1)*10) == 0) {
 				// 表示位置のxy座標は0~320(32ピクセル刻み)の範囲でランダム
-				var tomato = new Tomato(rand(10)*32,rand(10)*32,screen)
+				var tomato = new Tomato(rand(canvas.width/tomato_s.w)*tomato_s.w,rand(canvas.height/tomato_s.h)*tomato_s.h,screen)
 			}
 
 		});
@@ -310,6 +316,12 @@ var MainMenuScene = enchant.Class.create(enchant.Scene, {
 
 		var frame_num = 0;
 		var is_bgm_play = true;
+
+		var high_score = new MutableText(title.x,title.y/4)
+
+		high_score.text ='High Score: ' + game.high_score;
+
+		screen.addChild(high_score)
 
 		screen.addChild(title)
 		screen.addChild(start_button)
