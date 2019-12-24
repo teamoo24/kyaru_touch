@@ -13,8 +13,11 @@ const ASSETS = {
 
 	// 選択音
 	se_ok : './sound/se/se_ok.mp3',
+
 	// メインメニュbgm
-	bgm_mainmenu : './sound/bgm/bgm_mainmenu.mp3'
+	bgm_mainmenu : './sound/bgm/bgm_mainmenu.mp3',
+	// メインゲームbgm
+	bgm_maingame : './sound/bgm/bgm_maingame.mp3'
 }
 
 const canvas = {
@@ -25,7 +28,7 @@ const canvas = {
 const SCENE = {
 	title:1,
 	main_menu:2,
-	main_game:3
+	main_game:3,
 }
 
 const start_s = {
@@ -87,17 +90,20 @@ var Title_Kya = enchant.Class.create(enchant.Sprite, {
 	}
 });
 
-var se_ok, mainmenu_bgm;
+var se_ok, mainmenu_bgm, maingame_bgm;
 
 window.onload = function() {
 	game = new Core(canvas.width, canvas.height)
 	game.fps = 30;
+	game.score = 0;
+	game.timelimit = 30;
 	game.preload(ASSETS);
 	game.onload = function(){
 		se_ok = new SoundEffect();
 		se_ok.set(game.assets['se_ok'],1)
 
 		mainmenu_bgm = new Bgm()
+		maingame_bgm = new Bgm()
 
 		system = new System();
 		system.changeScene(SCENE.title)
@@ -117,8 +123,34 @@ var System = enchant.Class.create({
 				// statements_1
 				break;
 			case SCENE.main_menu:
-				var main = new MainMenuScene();
+				var main_menu = new MainMenuScene();
+				break;
+			case SCENE.main_game:
+				var main_game = new MainGameScene();
 		}
+	}
+});
+
+var MainGameScene = enchant.Class.create(enchant.Scene,{
+	initialize: function(){
+		enchant.Scene.call(this);
+		// 画面初期処理
+		game.replaceScene(this);
+
+		maingame_bgm.set(game.assets['bgm_maingame']);
+
+		this.backgroundColor = "#fff"
+
+		var is_bgm_play = true;
+
+		this.addEventListener(Event.ENTER_FRAME, function(){
+
+			maingame_bgm.loop()
+
+			if(!maingame_bgm.isPlay && is_bgm_play) {
+				maingame_bgm.play();
+			}
+		});
 	}
 });
 
@@ -129,6 +161,10 @@ var MainMenuScene = enchant.Class.create(enchant.Scene, {
 		game.replaceScene(this);
 
 		this.backgroundColor = "#fff"
+
+		var screen = new Group();//ゲーム用スクリーン作成
+        this.addChild(screen);
+
 		mainmenu_bgm.set(game.assets['bgm_mainmenu']);
 
 		var title = new Title()
@@ -136,23 +172,61 @@ var MainMenuScene = enchant.Class.create(enchant.Scene, {
 		var start_button = new StartButton()
 
 		var frame_num = 0;
+		var is_bgm_play = true;
+
+		screen.addChild(title)
+		screen.addChild(start_button)
+
+		var isStartPushed = false;
+
+		var from;
+
+		start_button.addEventListener(Event.TOUCH_END, function() {
+			if(!isStartPushed) {
+				isStartPushed = !isStartPushed;
+			}
+			if(is_bgm_play) {
+				is_bgm_play = !is_bgm_play
+			}
+			mainmenu_bgm.stop()
+			se_ok.play();//効果音
+
+			// this.age:スプライトを書きだして何フレーム動いたか
+			from = this.age;
+		});
+
+		// フェードアウト用のオブジェクト
+		var fade_out = new FadeOut(canvas.width, canvas.height, "#fff")
 
 		this.addEventListener(Event.ENTER_FRAME, function(){
 
 			mainmenu_bgm.loop()
-
-			this.addChild(title)
-			this.addChild(start_button)
 
 			if(this.age%10 == 0) {
 				frame_num = this.age/10
 			}
 
 			title_kya.chage_frame(frame_num%5)
-			this.addChild(title_kya)
+			screen.addChild(title_kya)
 
-			if(!mainmenu_bgm.isPlay) {
+			if(!mainmenu_bgm.isPlay && is_bgm_play) {
 				mainmenu_bgm.play();
+			}
+
+			if(isStartPushed) {
+				if(start_button.visible) {
+					start_button.visible = !start_button.visible
+				} else {
+					start_button.visible = !start_button.visible
+				}
+				if(this.age - from > 20){//20フレーム後にフェードアウト
+					fade_out.start(screen);
+				}
+			}
+
+			if(fade_out.do(0.1)){//trueが帰ってきたらフェードアウト後の処理へ
+				removeChildren(this);//子要素を削除
+				system.changeScene(SCENE.main_game);
 			}
 		});
 	}
@@ -165,17 +239,17 @@ var TitleScene = enchant.Class.create(enchant.Scene, {
 		game.replaceScene(this);
 
 		this.backgroundColor = "black";//背景色
-		
+
 		var screen = new Group();//ゲーム用スクリーン作成
         this.addChild(screen);
         var start_button = new MutableText(canvas.width/6, canvas.height/2, start_s.w);
-		
+
 		start_button.setText("Touch to start")
 
 		screen.addChild(start_button);
-	
+
 		// スタートボタンの押下チェック
-		var isStartPushed = false;	
+		var isStartPushed = false;
 		this.addEventListener(Event.TOUCH_END,function(e){
 			if(!isStartPushed) {
 				isStartPushed = !isStartPushed;
