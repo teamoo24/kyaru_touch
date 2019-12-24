@@ -29,10 +29,6 @@ const ASSETS = {
 	// メインゲームbgm
 	bgm_maingame : './sound/bgm/bgm_maingame.mp3'
 }
-const end_s = {
-	x : 0,
-	y : 0
-}
 const canvas = {
 	width : 320,
 	height : 320
@@ -41,6 +37,7 @@ const SCENE = {
 	title:1,
 	main_menu:2,
 	main_game:3,
+	result:4
 }
 const start_s = {
 	x:40,
@@ -80,6 +77,7 @@ var End = enchant.Class.create(enchant.Sprite, {
 		this.y = canvas.height/3;
 	}
 });
+
 var Title = enchant.Class.create(enchant.Sprite,{
 	initialize: function() {
 		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
@@ -178,7 +176,7 @@ window.onload = function() {
 	game = new Core(canvas.width, canvas.height)
 	game.fps = 30;
 	game.score = 0;
-	game.timelimit = 30;
+	game.timelimit = 5;
 	game.high_score = parseInt(localStorage.getItem("best_hatsune")) || game.score;
 
 	game.preload(ASSETS);
@@ -211,6 +209,10 @@ var System = enchant.Class.create({
 				break;
 			case SCENE.main_game:
 				var main_game = new MainGameScene();
+				break;
+			case SCENE.result:
+				var result = new ResultScene();
+				break;
 		}
 	}
 });
@@ -221,7 +223,9 @@ var ResultScene = enchant.Class.create(enchant.Scene, {
 		// 画面初期処理
 		game.replaceScene(this);
 
-		this.backgroundColor = "#fff"
+		this.backgroundColor = "#000"
+
+		console.log('asgasgas')
 	}
 })
 
@@ -268,7 +272,7 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 
 			maingame_bgm.loop()
 
-			if(!maingame_bgm.isPlay && is_bgm_play) {
+			if(!maingame_bgm.isPlay && is_bgm_play && !is_over) {
 				maingame_bgm.play();
 			}
 
@@ -282,21 +286,32 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 					is_over = true;
 				} else {
 					game.timelimit --;
+					this.from = this.age
 				}
 				timeLabel.text ='TIME:' + game.timelimit;
 			}
 
 			// ランダム(「10」か「20」か「30」フレーム毎に)にトマトのスプライトを作成する
-			if (game.frame % ((rand(3)+1)*10) == 0) {
+			if (game.frame % ((rand(3)+1)*10) == 0 && !is_over) {
 				// 表示位置のxy座標は0~320(32ピクセル刻み)の範囲でランダム
 				var tomato = new Tomato(rand((canvas.width/tomato_s.w)-1)*tomato_s.w + 16,rand((canvas.height/tomato_s.h)-1)*tomato_s.h + 16,is_over,screen)
 			}
 
-			if(is_over) {
-				screen.addChild(end)
-				this.from = this.age;
-			}
 
+			// フェードアウト用のオブジェクト
+			var fade_out = new FadeOut(canvas.width, canvas.height, "#000")
+
+			if(is_over){//20フレーム後にフェードアウト
+				screen.addChild(end)
+				fade_out.start(screen);
+				fade_out.do(0.1)
+
+				if(this.age - this.from > 150) {
+					maingame_bgm.stop()
+					system.changeScene(SCENE.result);
+					// console.log('asgasgasg')	
+				}
+			}
 		});
 	}
 });
