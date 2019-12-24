@@ -10,6 +10,12 @@ const ASSETS = {
 	kyaru_title : './img/kyaru_all.png',
 	// スタートボタン
 	start_button : './img/start_button.png',
+	// トマト画像
+	tomato : './img/tomato.png',
+	// エモーション画像を追加
+	emotion : './img/emotion.png',
+	// タイムアップ画像を追加
+	timeup : './img/timeup.png',
 
 	// 選択音
 	se_ok : './sound/se/se_ok.mp3',
@@ -54,6 +60,10 @@ const start_button = {
 	h:80
 }
 
+var se_ok, mainmenu_bgm, maingame_bgm;
+
+SPEED = 2;
+
 var Title = enchant.Class.create(enchant.Sprite,{
 	initialize: function() {
 		// 「var player = new Sprite(,)」 = 「enchant.Sprite.call(this,,0)」 
@@ -73,7 +83,6 @@ var StartButton = enchant.Class.create(enchant.Sprite, {
 		this.x = start_button.w/10;
 		this.y = canvas.height - start_button.h*2 + start_button.h/2;
 	}
-
 });
 
 var Title_Kya = enchant.Class.create(enchant.Sprite, {
@@ -90,7 +99,95 @@ var Title_Kya = enchant.Class.create(enchant.Sprite, {
 	}
 });
 
-var se_ok, mainmenu_bgm, maingame_bgm;
+var Tomato = enchant.Class.create(enchant.Sprite, {
+	// 「initialize」メソッド(コンストラクタ)
+	initialize: function(x,y,scene) {
+		// 継承元をコール
+		enchant.Sprite.call(this, 32, 32);
+		// スプライトの画像に「tomato.png」を設定する
+		this.image = game.assets['tomato']
+		this.x = x; //x座標
+		this.y = y; //y座標
+		this.frame = rand(3); // フレーム番号
+		this.tick = 0 //経過時間
+		
+		// 「enterframe」イベントリスナ
+		this.addEventListener(Event.ENTER_FRAME, function(){
+			// 1秒間で実行する処理
+			if(game.frame % game.fps == 0) {
+				// 経過秒数をカウントする
+				this.tick++;
+				// 2秒経過したなら、「remove」メソッドを実行する
+				if (this.tick>SPEED) this.remove()
+			}
+		});
+
+		// 「touchstart」イベントリスナ
+		this.addEventListener(Event.TOUCH_END, function(){
+			// 赤いトマト（フレーム番号が「2」）にタッチ
+			if (this.frame == 2) {
+				game.score += 10; // スコア + 10点
+				// ウィンクのエモーションを作成する
+				var emotion = new Emotion(this.x, this.y, scene);
+				emotion.frame = 1;
+			}
+
+			// 黄色いトマト(フレーム番号が「1」)にタッチ
+			if (this.frame == 1) {
+				game.score -= 1; // スコア - 1点
+				// 怒りのエモーションを作成する
+				var emotion = new Emotion(this.x, this.y, scene);
+				emotion.frame = 3;
+			}
+
+			// 緑色いトマト(フレーム番号が「0」)にタッチ
+			if (this.frame == 0) {
+				game.score -= 1; // スコア - 1点
+				// 泣き顔のエモーションを作成する
+				var emotion = new Emotion(this.x, this.y, scene);
+				emotion.frame = 4;
+			}
+
+			// 「remove」メソッドを実行し、シーンから削除
+			this.remove();
+		});
+		scene.addChild(this)
+	},
+	remove: function() {
+		// このスプライトをシーンから削除
+		removeChildren(this)
+		// このスプライトを削除
+		delete this;
+	}
+});
+
+// エモーションのスプライトを作成するクラス
+var Emotion = enchant.Class.create(enchant.Sprite, {
+	// 「initailize」メソッド(コンタクトラクタ)
+	initialize: function(x,y,scene) {
+		// 継承元をコール
+		enchant.Sprite.call(this, 32, 32);
+		// スプライトの画像に「emotion.png」を設定する
+		this.image = game.assets['emotion'];
+		this.x = x; //x座標
+		this.y = y; //y座標
+		// 「enterframe」イベントリスナ
+		this.addEventListener(Event.ENTER_FRAME, function() {
+			// このスプライトの移動処理
+			this.frame <=2 ? this.y -=4 : this.y +=4;
+			// このスプライトが画面の上下端まで移動したら、「remove」メソッドを実行して削除する
+			if(this.y || this.y>320) this.remove()
+		});
+		scene.addChild(this)
+	},
+	// 「remove」メソッド
+	remove: function() {
+		// このスプライトをシーンから削除
+		removeChildren(this);
+		// このスプライトを削除する
+		delete this;
+	}
+});
 
 window.onload = function() {
 	game = new Core(canvas.width, canvas.height)
@@ -141,6 +238,22 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 
 		this.backgroundColor = "#fff"
 
+		// 引数はラベル表示位置のxy座標
+		var scoreLabel = new ScoreLabel(160,0);
+		// スコアの初期値
+		scoreLabel.score = 0;
+		// イージング表示なしに設定する
+		scoreLabel.easing = 0;
+		this.addChild(scoreLabel);
+
+		// 制限時間(残り時間)のフォントで表示するラベルを作成する
+		// 引数はラベル表示位置のxy座標
+		var timeLabel = new MutableText(10,0)
+
+		// 表示する文字列の初期設定
+		timeLabel.text = 'TIME:' + game.limitTime;
+		this.addChild(timeLabel)
+
 		var is_bgm_play = true;
 
 		this.addEventListener(Event.ENTER_FRAME, function(){
@@ -150,6 +263,29 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 			if(!maingame_bgm.isPlay && is_bgm_play) {
 				maingame_bgm.play();
 			}
+
+			// スコアを更新数
+			scoreLabel.score = game.score;
+
+			console.log(game.frame)
+
+			if (game.frame % game.fps == 0) {
+				// 制限時間を１秒ずつカウントダウンする
+				game.limitTime --;
+				timeLabel.text = 'TIME : ' + game.limitTime;
+				if (game.limitTime == 0) {
+					// 制限時間が「0」ならタイムアップの画像を表示して終了
+					game.end(null,null,core.assets['timeup']);
+				}
+				var tomato = new Tomato(rand(10)*32,rand(10)*32,this)
+			}
+
+			// ランダム(「10」か「20」か「30」フレーム毎に)にトマトのスプライトを作成する
+			// if (game.frame % (rand(3)+1)*10 == 0) {
+				// 表示位置のxy座標は0~320(32ピクセル刻み)の範囲でランダム
+				
+			// }
+
 		});
 	}
 });
