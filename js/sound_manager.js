@@ -39,6 +39,7 @@ var Bgm = enchant.Class.create({
     //再生(再生のみに使う)
     play: function(){
         this.data.play();
+        this.data.volume = 0.5;
         this.isPlay = true;
         if(this.data.src != undefined){//srcプロパティを持っている場合(スマホの場合)
             this.data.src.loop = true;

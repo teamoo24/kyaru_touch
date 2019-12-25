@@ -3,35 +3,35 @@ enchant();
 
 const ASSETS = {
 	// スタート画像を追加
-	title_font : './img/title_font.png',
+	title_font : 'https://dripcoke.com/invented/kyaru_touch/img/title_font.png',
 	// ゲームオーバー画像を追加
-	end : './img/end.png',
+	end : 'https://dripcoke.com/invented/kyaru_touch/img/end.png',
 	// キャルイメージ
-	kyaru_title : './img/kyaru_all.png',
+	kyaru_title : 'https://dripcoke.com/invented/kyaru_touch/img/kyaru_all.png',
 	// スタートボタン
-	start_button : './img/start_button.png',
+	start_button : 'https://dripcoke.com/invented/kyaru_touch/img/start_button.png',
 	// トマト画像
-	tomato : './img/tomato.png',
+	tomato : 'https://dripcoke.com/invented/kyaru_touch/img/tomato.png',
 	// エモーション画像を追加
-	emotion : './img/emotion.png',
+	emotion : 'https://dripcoke.com/invented/kyaru_touch/img/emotion.png',
 	// タイムアップ画像を追加
-	timeup : './img/timeup.png',
+	timeup : 'https://dripcoke.com/invented/kyaru_touch/img/timeup.png',
 	// ランク表示用の画像を追加
-	rank : './img/rank.png',
+	rank : 'https://dripcoke.com/invented/kyaru_touch/img/rank.png',
 
 	// 選択音
-	se_ok : './sound/se/se_ok.mp3',
+	se_ok : 'https://dripcoke.com/invented/kyaru_touch/sound/se/se_ok.mp3',
 	// キャルクリック
-	se_true : './sound/se/se_true.mp3',
+	se_true : 'https://dripcoke.com/invented/kyaru_touch/sound/se/se_true.mp3',
 	// 他のキャラクリック
-	se_false : './sound/se/se_false.mp3',
+	se_false : 'https://dripcoke.com/invented/kyaru_touch/sound/se/se_false.mp3',
 
 	// メインメニュbgm
-	bgm_mainmenu : './sound/bgm/bgm_mainmenu.mp3',
+	bgm_mainmenu : 'https://dripcoke.com/invented/kyaru_touch/sound/bgm/bgm_mainmenu.mp3',
 	// メインゲームbgm
-	bgm_maingame : './sound/bgm/bgm_maingame.mp3',
+	bgm_maingame : 'https://dripcoke.com/invented/kyaru_touch/sound/bgm/bgm_maingame.mp3',
 	// 結果画面bgm
-	bgm_result : './sound/bgm/bgm_result.mp3'
+	bgm_result : 'https://dripcoke.com/invented/kyaru_touch/sound/bgm/bgm_result.mp3'
 }
 const canvas = {
 	width : 320,
@@ -76,7 +76,7 @@ var se_ok, mainmenu_bgm, maingame_bgm, result_bgm, se_true, se_false;
 // ゲームのブロックの生成時間調整
 SPEED = 2;
 // ゲームのプレイ時間設定
-INIT_TIMELIMIT=5;
+INIT_TIMELIMIT=60;
 
 var End = enchant.Class.create(enchant.Sprite, {
 	initialize : function() {
@@ -117,7 +117,7 @@ var Rank = enchant.Class.create(enchant.Sprite, {
 		this.x = x;
 		this.y = y;
 
-		var rank_per = 8;
+		var rank_per = 10;
 		if(score<rank_per) {
 			this.frame = 0;
 		} else if(score<rank_per*2) {
@@ -159,7 +159,7 @@ var Tomato = enchant.Class.create(enchant.Sprite, {
 		this.y = y; //y座標
 		this.frame = rand(3); // フレーム番号
 		this.tick = 0 //経過時間
-		
+
 		// 「enterframe」イベントリスナ
 		this.addEventListener(Event.ENTER_FRAME, function(){
 			// 1秒間で実行する処理
@@ -212,7 +212,7 @@ window.onload = function() {
 	game.fps = 30;
 	game.score = 0;
 	game.timelimit = INIT_TIMELIMIT;
-	game.high_score = parseInt(localStorage.getItem("best_hatsune")) || game.score;
+	game.high_score = parseInt(localStorage.getItem("best_touch")) || game.score;
 
 	game.preload(ASSETS);
 	game.onload = function(){
@@ -264,16 +264,19 @@ var ResultScene = enchant.Class.create(enchant.Scene, {
 
 		this.backgroundColor = "#000"
 
+		game.high_score = Math.max(game.score, game.high_score);
+		localStorage.setItem("best_touch", game.high_score);
+
 		result_bgm.set(game.assets['bgm_result']);
 
 		var score_label = new MutableText(canvas.width/4,canvas.height/9)
-		score_label.text = 'Your score'; 
+		score_label.text = 'Your score';
 
 		var score_value = new MutableText(canvas.width/4,canvas.height/9 * 2)
 		score_value.text = String(game.score);
 
 		var highscore_label = new MutableText(canvas.width/4,canvas.height/9 * 3)
-		highscore_label.text = 'High sore'; 
+		highscore_label.text = 'High sore';
 
 		var highscore_value = new MutableText(canvas.width/4,canvas.height/9 * 4)
 		highscore_value.text = String(game.high_score);
@@ -295,7 +298,6 @@ var ResultScene = enchant.Class.create(enchant.Scene, {
 			if(!result_bgm.isPlay && !is_touched) {
 				result_bgm.play();
 			}
-			console.log('age :' + this.age)
 			if (this.age == ani_tum) {
 				screen.addChild(score_label);
 			} else if (this.age == ani_tum*2) {
@@ -311,15 +313,28 @@ var ResultScene = enchant.Class.create(enchant.Scene, {
 			} else if (this.age > ani_tum*7) {
 				screen.addChild(touch_to_back)
 				is_can_back = true;
-			} 
+			}
 
-			
+			if(this.age - this.from > 20){//20フレーム後にフェードアウト
+				fade_out.start(screen);
+			}
+
+			if(fade_out.do(0.1)){//trueが帰ってきたらフェードアウト後の処理へ
+				removeChildren(this);//子要素を削除
+				system.changeScene(SCENE.main_menu);
+			}
+
 		});
+
+		// フェードアウト用のオブジェクト
+		var fade_out = new FadeOut(canvas.width, canvas.height, "#fff")
+
 		this.addEventListener(Event.TOUCH_END,function(){
 			is_touched = true;
 			if(is_can_back) {
 				result_bgm.stop();
-				system.changeScene(SCENE.main_menu);				
+				se_ok.play();//効果音
+				this.from = this.age;
 			}
 		})
 
@@ -346,6 +361,7 @@ var MainGameScene = enchant.Class.create(enchant.Scene,{
 		this.backgroundColor = "#fff"
 
 		game.timelimit = INIT_TIMELIMIT;
+		game.score = 0;
 
 		// 引数はラベル表示位置のxy座標
 		var scoreLabel = new ScoreLabel(160,0);

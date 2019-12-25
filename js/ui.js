@@ -44,10 +44,10 @@
  *      core.rootScene.addEventListener(button);
  */
 
-const pad = './img/pad.png'
-const apad = './img/apad.png'
-const icon0 = './img/icon0.png'
-const font0 = './img/font0.png'
+const pad = 'https://dripcoke.com/invented/kyaru_touch/img/pad.png'
+const apad = 'https://dripcoke.com/invented/kyaru_touch/img/apad.png'
+const icon0 = 'https://dripcoke.com/invented/kyaru_touch/img/icon0.png'
+const font0 = 'https://dripcoke.com/invented/kyaru_touch/img/font0.png'
 /**
  * @type {Object}
  */
